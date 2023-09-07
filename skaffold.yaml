@@ -9,9 +9,9 @@ build:
   - imageName: result
     workspace: voting-app/result/
 deploy:
-  kustomize:
-    paths:
-    - ./
+  # kustomize:
+  #   paths:
+  #   - ./
   kubectl:
     manifests:
     - ./voting-app/k8s-specifications/*
