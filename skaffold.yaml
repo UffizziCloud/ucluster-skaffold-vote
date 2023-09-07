@@ -7,8 +7,10 @@ build:
     kaniko: {}
   - image: worker
     context: voting-app/worker/
+    kaniko: {}
   - image: result
     context: voting-app/result/
+    kaniko: {}
   cluster: {}
 manifests:
   kustomize:
