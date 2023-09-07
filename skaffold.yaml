@@ -1,11 +1,11 @@
 apiVersion: skaffold/v4beta2
 kind: Config
 build:
-  cluster:
-    concurrency: 0
-    # pullSecretName: kaniko-secret
-    randomDockerConfigSecret: false
-    randomPullSecret: false
+  # cluster:
+  #   concurrency: 0
+  #   # pullSecretName: kaniko-secret
+  #   randomDockerConfigSecret: false
+  #   randomPullSecret: false
   artifacts:
   - image: vote
     context: voting-app/vote/

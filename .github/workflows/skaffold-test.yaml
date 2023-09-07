@@ -25,8 +25,8 @@ jobs:
                 cluster-name: pr-${{ github.event.pull_request.number }}
 
             - shell: bash
+              name: Install Skaffold and run
               run: |
-                #Install Skaffold
                 curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
                 sudo install skaffold /usr/local/bin/
 
