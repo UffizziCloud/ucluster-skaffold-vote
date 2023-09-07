@@ -26,7 +26,7 @@ RUN ARCH=x64 \
 #     && dotnet publish -c release -o /app -r linux-${ARCH} --self-contained false --no-restore
 
 # App image
-FROM mcr.microsoft.com/dotnet/runtime:7.0
+FROM mcr.microsoft.com/dotnet/runtime:7.0-jammy-amd64
 WORKDIR /app
 COPY --from=build /app .
 ENTRYPOINT ["dotnet", "Worker.dll"]
