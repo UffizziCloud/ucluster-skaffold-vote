@@ -9,6 +9,7 @@ build:
     context: voting-app/worker/
   - image: result
     context: voting-app/result/
+  cluster: {}
 manifests:
   kustomize:
     paths:
