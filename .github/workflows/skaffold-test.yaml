@@ -32,7 +32,7 @@ jobs:
 
                 cat kubeconfig
 
-                kubectl config set-context --kubeconfig=kubeconfig 
+                kubectl config set-context --kubeconfig=kubeconfig uc-pr-${{ github.event.pull_request.number }}
 
                 skaffold dev --default-repo registry.uffizzi.com -f skaffold.yaml
 
