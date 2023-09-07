@@ -24,8 +24,16 @@ jobs:
               with:
                 cluster-name: pr-${{ github.event.pull_request.number }}
 
-            - name: Build Docker images
-              uses: hiberbee/github-action-skaffold@1.20.0
-              with:
-                command: dev
-                repository: registry.uffizzi.com
+            - shell: bash
+              run: |
+                #Install Skaffold
+                curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
+                sudo install skaffold /usr/local/bin/
+
+                skaffold dev --default-repo registry.uffizzi.com -f skaffold.yaml
+
+            # - name: Build Docker images
+            #   uses: hiberbee/github-action-skaffold@1.20.0
+            #   with:
+            #     command: dev
+            #     repository: registry.uffizzi.com
