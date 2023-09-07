@@ -18,6 +18,12 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v3
 
+            # Create/Connect to Uffizzi Virtual Cluster
+            - name: Connect to Virtual Cluster
+              uses: UffizziCloud/cluster-action@main
+              with:
+                cluster-name: pr-${{ github.event.pull_request.number }}
+
             - name: Build Docker images
               uses: hiberbee/github-action-skaffold@1.20.0
               with:
