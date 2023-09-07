@@ -8,7 +8,8 @@ build:
     context: voting-app/worker/
   - image: result
     context: voting-app/result/
-# deploy:
-#   kubectl:
-#     manifests:
-#     - ./voting-app/k8s-specifications/*
+
+manifests:
+  kustomize:
+    paths:
+    - .
