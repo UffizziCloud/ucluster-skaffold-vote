@@ -10,7 +10,6 @@ permissions:
     id-token: write
 
 jobs:
-    # Try
     try:
         name: Skaffold Docker build
         runs-on: ubuntu-latest
@@ -34,8 +33,12 @@ jobs:
 
                 skaffold dev --kubeconfig kubeconfig --default-repo registry.uffizzi.com -f skaffold.yaml
 
-            # - name: Build Docker images
-            #   uses: hiberbee/github-action-skaffold@1.20.0
-            #   with:
-            #     command: dev
-            #     repository: registry.uffizzi.com
+    uffizzi-cluster-delete:
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
+        runs-on: ubuntu-latest
+        steps:
+        - name: Delete Virtual Cluster
+          uses: UffizziCloud/cluster-action@main
+          with:
+            action: delete
+            cluster-name: pr-${{ github.event.pull_request.number }}
