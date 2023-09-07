@@ -1,45 +1,45 @@
-# name: Skaffold Test Workflow
+name: Skaffold Test Workflow
 
-# on:
-#     pull_request:
-#       types: [opened,reopened,synchronize,closed]
+on:
+    pull_request:
+      types: [opened,reopened,synchronize,closed]
 
-# permissions:
-#     contents: read
-#     pull-requests: write
-#     id-token: write
+permissions:
+    contents: read
+    pull-requests: write
+    id-token: write
 
-# jobs:
-#     try:
-#         if: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' }}
-#         name: Skaffold Docker build
-#         runs-on: ubuntu-latest
-#         steps:
-#             - name: Checkout
-#               uses: actions/checkout@v3
+jobs:
+    try:
+        if: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' }}
+        name: Skaffold Docker build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
 
-#             # Create/Connect to Uffizzi Virtual Cluster
-#             - name: Connect to Virtual Cluster
-#               uses: UffizziCloud/cluster-action@main
-#               with:
-#                 cluster-name: pr-${{ github.event.pull_request.number }}
+            # Create/Connect to Uffizzi Virtual Cluster
+            - name: Connect to Virtual Cluster
+              uses: UffizziCloud/cluster-action@main
+              with:
+                cluster-name: pr-${{ github.event.pull_request.number }}
 
-#             - shell: bash
-#               run: |
-#                 #Install Skaffold
-#                 curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
-#                 sudo install skaffold /usr/local/bin/
+            - shell: bash
+              run: |
+                #Install Skaffold
+                curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
+                sudo install skaffold /usr/local/bin/
 
-#                 kubectl config set-context --kubeconfig=kubeconfig uc-pr-${{ github.event.pull_request.number }}
+                kubectl config set-context --kubeconfig=kubeconfig uc-pr-${{ github.event.pull_request.number }}
 
-#                 skaffold dev --kubeconfig kubeconfig --default-repo registry.uffizzi.com -f skaffold.yaml
+                skaffold dev --kubeconfig kubeconfig --default-repo registry.uffizzi.com -f skaffold.yaml
 
-#     uffizzi-cluster-delete:
-#         if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
-#         runs-on: ubuntu-latest
-#         steps:
-#         - name: Delete Virtual Cluster
-#           uses: UffizziCloud/cluster-action@main
-#           with:
-#             action: delete
-#             cluster-name: pr-${{ github.event.pull_request.number }}
+    uffizzi-cluster-delete:
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
+        runs-on: ubuntu-latest
+        steps:
+        - name: Delete Virtual Cluster
+          uses: UffizziCloud/cluster-action@main
+          with:
+            action: delete
+            cluster-name: pr-${{ github.event.pull_request.number }}
