@@ -5,13 +5,18 @@ build:
   - image: vote
     context: voting-app/vote/
     kaniko: {}
-  # - image: worker
-  #   context: voting-app/worker/
-  #   kaniko: {}
+  - image: worker
+    context: voting-app/worker/
+    kaniko: {}
   - image: result
     context: voting-app/result/
     kaniko: {}
-  cluster: {}
+  cluster:
+    resources:
+      requests:
+        memory: 2Gi
+      limits:
+        memory: 4Gi
 manifests:
   kustomize:
     paths:
