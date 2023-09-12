@@ -1,4 +1,5 @@
 module.exports = {
+  chromeWebSecurity: false,
   e2e: {
     baseUrl: 'https://harbor.example.com',   
     supportFile: false,
