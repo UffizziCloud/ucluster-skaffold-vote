@@ -31,7 +31,7 @@ jobs:
 
         kubectl config set-context --kubeconfig=kubeconfig uc-pr-${{ github.event.pull_request.number }}
 
-        skaffold dev --kubeconfig kubeconfig --default-repo registry.uffizzi.com -f skaffold.yaml
+        skaffold run --kubeconfig kubeconfig --default-repo registry.uffizzi.com -f skaffold.yaml
 
     - name: Get ingress
       id: ingress
