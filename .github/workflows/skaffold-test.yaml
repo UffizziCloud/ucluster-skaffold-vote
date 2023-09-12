@@ -74,10 +74,12 @@ jobs:
         echo "TK_DASHBOARD=$(kubectl get ingress my-testkube-ingress  --kubeconfig="`pwd`/kubeconfig" -o json | jq '.spec.rules[0].host' | tr -d '"')" >> "$GITHUB_OUTPUT"
         
     - shell: bash
+      name: Update API endpoint
       env:
         API_SERVER: ${{ steps.test.outputs.API_SERVER }}
       run: |
         export KUBECONFIG=`pwd`/kubeconfig
+        echo ${{ steps.test.outputs.API_SERVER }}
         helm upgrade my-testkube kubeshop/testkube --set testkube-dashboard.apiServerEndpoint=${{ steps.test.outputs.API_SERVER }}
 
     - name: Get test with Testkube
