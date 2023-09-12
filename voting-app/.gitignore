@@ -1,0 +1,6 @@
+*.pyc
+project.lock.json
+bin/
+obj/
+
+skaffold.yaml

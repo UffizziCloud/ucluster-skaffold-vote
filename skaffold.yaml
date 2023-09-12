@@ -1,0 +1,23 @@
+apiVersion: skaffold/v4beta2
+kind: Config
+build:
+  artifacts:
+  - image: vote
+    context: voting-app/vote/
+    kaniko: {}
+  - image: worker
+    context: voting-app/worker/
+    kaniko: {}
+  - image: result
+    context: voting-app/result/
+    kaniko: {}
+  cluster:
+    resources:
+      requests:
+        memory: 2Gi
+      limits:
+        memory: 4Gi
+manifests:
+  kustomize:
+    paths:
+    - .
