@@ -22,7 +22,7 @@ jobs:
       uses: UffizziCloud/cluster-action@main
       with:
         cluster-name: pr-${{ github.event.pull_request.number }}
-        server: https://app.qa-gke.uffizzi.com/
+        server: https://app.uffizzi.com/
 
     - shell: bash
       name: Install Skaffold and run
@@ -62,13 +62,13 @@ jobs:
           kubectl delete ingress my-testkube-ingress --kubeconfig="`pwd`/kubeconfig"
         fi
         kubectl create ingress my-testkube-ingress --kubeconfig="`pwd`/kubeconfig" \
-            --rule="testkube.uclusters.app.qa-gke.uffizzi.com/*=testkube-dashboard:8080,tls"
+            --rule="testkube.uclusters.app.uffizzi.com/*=testkube-dashboard:8080,tls"
 
         if $(kubectl get ingress my-testkube-api-server --kubeconfig="`pwd`/kubeconfig" | grep -q "my-testkube-api-server"); then
           kubectl delete ingress my-testkube-api-server --kubeconfig="`pwd`/kubeconfig"
         fi
         kubectl create ingress my-testkube-api-server --kubeconfig="`pwd`/kubeconfig" \
-            --rule="testkube-api-server.uclusters.app.qa-gke.uffizzi.com/*=testkube-api-server:8088,tls"
+            --rule="testkube-api-server.uclusters.app.uffizzi.com/*=testkube-api-server:8088,tls"
 
         sleep 20
 
