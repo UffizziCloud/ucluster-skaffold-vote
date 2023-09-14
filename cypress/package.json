@@ -1,0 +1,13 @@
+{
+  "name": "harbor",
+  "version": "2.9.0",
+  "description": "Harbor UI with Clarity",
+  "angular-cli": {},
+  "scripts": {},
+  "private": true,
+  "devDependencies": {
+    "cypress": "10.0.0"
+  },
+  "author": "Gopal Nambiar",
+  "license": "ISC"
+}

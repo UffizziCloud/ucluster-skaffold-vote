@@ -1,45 +1,128 @@
 name: Skaffold Test Workflow
 
 on:
-    pull_request:
-      types: [opened,reopened,synchronize,closed]
+  pull_request:
+    types: [opened,reopened,synchronize,closed]
 
 permissions:
-    contents: read
-    pull-requests: write
-    id-token: write
+  contents: read
+  pull-requests: write
+  id-token: write
 
 jobs:
-    try:
-        if: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' }}
-        name: Skaffold Docker build
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v3
+  skaffold-dev:
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' }}
+    name: Skaffold Docker build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
 
-            # Create/Connect to Uffizzi Virtual Cluster
-            - name: Connect to Virtual Cluster
-              uses: UffizziCloud/cluster-action@main
-              with:
-                cluster-name: pr-${{ github.event.pull_request.number }}
+    - name: Connect to Virtual Cluster
+      uses: UffizziCloud/cluster-action@main
+      with:
+        cluster-name: pr-${{ github.event.pull_request.number }}
+        server: https://app.uffizzi.com/
 
-            - shell: bash
-              name: Install Skaffold and run
-              run: |
-                curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
-                sudo install skaffold /usr/local/bin/
+    - shell: bash
+      name: Install Skaffold and run
+      run: |
+        sleep 20
+        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
+        sudo install skaffold /usr/local/bin/
 
-                kubectl config set-context --kubeconfig=kubeconfig uc-pr-${{ github.event.pull_request.number }}
+        kubectl config set-context --kubeconfig=kubeconfig uc-pr-${{ github.event.pull_request.number }}
 
-                skaffold dev --kubeconfig kubeconfig --default-repo registry.uffizzi.com -f skaffold.yaml
+        skaffold run --kubeconfig kubeconfig --default-repo registry.uffizzi.com -f skaffold.yaml
 
-    uffizzi-cluster-delete:
-        if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
-        runs-on: ubuntu-latest
-        steps:
-        - name: Delete Virtual Cluster
-          uses: UffizziCloud/cluster-action@main
-          with:
-            action: delete
-            cluster-name: pr-${{ github.event.pull_request.number }}
+    - name: Get ingress
+      id: ingress
+      run: |
+        sleep 20
+        echo "VOTE_HOST=$(kubectl get ingress vote --kubeconfig kubeconfig -o json | jq '.spec.rules[0].host' | tr -d '"')" >> "$GITHUB_OUTPUT"
+    
+    - name: Install Testkube helm chart
+      run: |
+        export KUBECONFIG="`pwd`/kubeconfig"  
+
+        helm repo add kubeshop https://kubeshop.github.io/helm-charts
+
+        if $(helm ls | grep -q my-testkube); then
+          helm upgrade --install my-testkube kubeshop/testkube
+        else
+          helm install my-testkube kubeshop/testkube
+        fi
+
+        sleep 10
+
+    - name: Create Ingress for Testkube
+      id: test
+      run: |
+        if $(kubectl get ingress my-testkube-ingress --kubeconfig="`pwd`/kubeconfig" | grep -q "my-testkube-ingress"); then
+          kubectl delete ingress my-testkube-ingress --kubeconfig="`pwd`/kubeconfig"
+        fi
+        kubectl create ingress my-testkube-ingress --kubeconfig="`pwd`/kubeconfig" \
+            --rule="testkube.uclusters.app.uffizzi.com/*=testkube-dashboard:8080,tls"
+
+        if $(kubectl get ingress my-testkube-api-server --kubeconfig="`pwd`/kubeconfig" | grep -q "my-testkube-api-server"); then
+          kubectl delete ingress my-testkube-api-server --kubeconfig="`pwd`/kubeconfig"
+        fi
+        kubectl create ingress my-testkube-api-server --kubeconfig="`pwd`/kubeconfig" \
+            --rule="testkube-api-server.uclusters.app.uffizzi.com/*=testkube-api-server:8088,tls"
+
+        sleep 20
+
+        echo "API_SERVER=$(kubectl get ingress my-testkube-api-server --kubeconfig="`pwd`/kubeconfig" -o json | jq '.spec.rules[0].host' | tr -d '"')" >> "$GITHUB_OUTPUT"
+        echo "TK_DASHBOARD=$(kubectl get ingress my-testkube-ingress  --kubeconfig="`pwd`/kubeconfig" -o json | jq '.spec.rules[0].host' | tr -d '"')" >> "$GITHUB_OUTPUT"
+        
+    - shell: bash
+      name: Update API endpoint
+      env:
+        API_SERVER: ${{ steps.test.outputs.API_SERVER }}
+      run: |
+        export KUBECONFIG=`pwd`/kubeconfig
+        echo ${{ steps.test.outputs.API_SERVER }}
+        helm upgrade my-testkube kubeshop/testkube --set testkube-dashboard.apiServerEndpoint=${{ steps.test.outputs.API_SERVER }}
+
+    - name: Get test with Testkube
+      id: get_test
+      uses: kubeshop/testkube-docker-action@v1
+      with:
+        command: get
+        resource: test
+        api-uri: https://${{ steps.test.outputs.API_SERVER }}
+        parameters: "cypress-test"
+
+    - name: Create test with Testkube
+      id: create_test
+      if: always() && (steps.get_test.outcome == 'failure')
+      uses: kubeshop/testkube-docker-action@v1
+      env:
+        KUBECONFIG: kubeconfig
+        KUBERNETES_MASTER: kubeconfig
+        API_SERVER: ${{ steps.test.outputs.API_SERVER }}
+      with:
+        command: create
+        resource: test
+        api-uri: https://${{ steps.test.outputs.API_SERVER }}
+        parameters: "--name cypress-test --type cypress/project --test-content-type git-dir --git-uri https://github.com/UffizziCloud/ucluster-skaffold-vote/ --git-branch testkube-integration --git-path cypress/ --variable CYPRESS_BASE_URL=https://${{ steps.ingress.outputs.VOTE_HOST }} --job-template job.yaml"
+
+    - name: Run test with Testkube
+      id: run_test
+      if: always()
+      uses: kubeshop/testkube-docker-action@v1
+      with:
+        command: run
+        resource: test
+        api-uri: https://${{ steps.test.outputs.API_SERVER }}
+        parameters: "cypress-test"
+
+  uffizzi-cluster-delete:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Delete Virtual Cluster
+      uses: UffizziCloud/cluster-action@main
+      with:
+        action: delete
+        cluster-name: pr-${{ github.event.pull_request.number }}
